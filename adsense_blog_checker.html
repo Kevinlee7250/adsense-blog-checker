@@ -1356,6 +1356,11 @@ function renderResults(d){
   document.getElementById('ai-analysis').textContent=aiResult;
   document.getElementById('result-btns').classList.remove('hidden');
   document.getElementById('result-section').scrollIntoView({behavior:'smooth',block:'start'});
+  // 80점 이하이면 자동으로 재작성 실행
+  if(score<=80){
+    showAutoRewriteNotice(score);
+    setTimeout(()=>rewriteWithAnalysis(true),1200);
+  }
 }
 
 function renderFallback(content){
@@ -1397,6 +1402,22 @@ function renderFallback(content){
   document.getElementById('ai-analysis').classList.remove('hidden');
   document.getElementById('ai-analysis').textContent=aiResult;
   document.getElementById('result-btns').classList.remove('hidden');
+  // 80점 이하이면 자동으로 재작성 실행
+  if(score<=80){
+    showAutoRewriteNotice(score);
+    setTimeout(()=>rewriteWithAnalysis(true),1200);
+  }
+}
+
+function showAutoRewriteNotice(score){
+  // 기존 알림 제거
+  const old=document.getElementById('auto-rewrite-notice');
+  if(old)old.remove();
+  const notice=document.createElement('div');
+  notice.id='auto-rewrite-notice';
+  notice.style.cssText='background:linear-gradient(135deg,#fff3e0,#fce4ec);border:1px solid #ff9800;border-radius:10px;padding:12px 16px;font-size:13px;color:#bf360c;margin-top:10px;display:flex;align-items:center;gap:10px;line-height:1.6';
+  notice.innerHTML=`<span style="font-size:20px">🤖</span><div><strong>점수 ${score}점 — 자동 재작성 시작!</strong><br><span style="font-size:12px;color:#555">80점 이하이므로 개선 제안을 반영하여 자동으로 재작성합니다. 잠시 기다려주세요...</span></div>`;
+  document.getElementById('result-btns').after(notice);
 }
 
 function copyAnalysis(){
@@ -1408,11 +1429,14 @@ function copyAnalysis(){
 
 let rewrittenText='';
 
-async function rewriteWithAnalysis(){
+async function rewriteWithAnalysis(auto=false){
   const apiKey=getApiKey(); if(!apiKey)return;
   const originalContent=document.getElementById('blog-content').value.trim();
-  if(!originalContent||originalContent.length<100){alert('점검할 글이 없습니다. 먼저 블로그 글을 입력하고 점검을 완료해주세요.');return}
-  if(!aiResult||aiResult.length<10){alert('개선 제안 결과가 없습니다. 먼저 AI 점검을 완료해주세요.');return}
+  if(!originalContent||originalContent.length<100){if(!auto)alert('점검할 글이 없습니다. 먼저 블로그 글을 입력하고 점검을 완료해주세요.');return}
+  if(!aiResult||aiResult.length<10){if(!auto)alert('개선 제안 결과가 없습니다. 먼저 AI 점검을 완료해주세요.');return}
+  // 자동 실행 알림 배너 제거
+  const notice=document.getElementById('auto-rewrite-notice');
+  if(notice)notice.remove();
 
   // UI 초기화
   const rewriteCard=document.getElementById('rewrite-card');
