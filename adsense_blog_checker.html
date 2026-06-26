@@ -225,6 +225,30 @@ select{font-family:inherit;font-size:13px}
           <span class="writer-name">🌿 친환경·미니멀리스트</span>
           <span class="writer-desc">덜 쓰고 의미 있게, 부드러운 권유형 어투</span>
         </button>
+        <button class="writer-btn" onclick="selWriter(this,'IT_테크_얼리어답터')">
+          <span class="writer-name">💻 IT·테크 얼리어답터</span>
+          <span class="writer-desc">신제품 직접 테스트, 수치 비교, 개발자 감각</span>
+        </button>
+        <button class="writer-btn" onclick="selWriter(this,'반려동물_집사')">
+          <span class="writer-name">🐾 반려동물 집사</span>
+          <span class="writer-desc">강아지·고양이 육아일기, 감성적이고 따뜻한 어투</span>
+        </button>
+        <button class="writer-btn" onclick="selWriter(this,'자기계발_독서가')">
+          <span class="writer-name">📚 자기계발·독서가</span>
+          <span class="writer-desc">책·강의 리뷰, 성장 마인드셋, 인사이트 중심</span>
+        </button>
+        <button class="writer-btn" onclick="selWriter(this,'시골_귀농인')">
+          <span class="writer-name">🌾 시골·귀농 이주자</span>
+          <span class="writer-desc">도시 떠나 자연 속 삶, 느긋하고 여유로운 글</span>
+        </button>
+        <button class="writer-btn" onclick="selWriter(this,'게임_취미_덕후')">
+          <span class="writer-name">🎮 게임·취미 덕후</span>
+          <span class="writer-desc">특정 분야 깊게 파는 오타쿠 감성, 열정 가득</span>
+        </button>
+        <button class="writer-btn" onclick="selWriter(this,'육아_맘블로거')">
+          <span class="writer-name">👶 육아 맘블로거</span>
+          <span class="writer-desc">맘카페 스타일, 육아템·교육 정보 전문 공유</span>
+        </button>
       </div>
     </div>
 
@@ -463,6 +487,30 @@ select{font-family:inherit;font-size:13px}
           <span class="writer-name">🌿 친환경·미니멀리스트</span>
           <span class="writer-desc">덜 쓰고 의미 있게, 부드러운 권유형 어투</span>
         </button>
+        <button class="writer-btn" onclick="selHWriter(this,'IT_테크_얼리어답터')">
+          <span class="writer-name">💻 IT·테크 얼리어답터</span>
+          <span class="writer-desc">신제품 직접 테스트, 수치 비교, 개발자 감각</span>
+        </button>
+        <button class="writer-btn" onclick="selHWriter(this,'반려동물_집사')">
+          <span class="writer-name">🐾 반려동물 집사</span>
+          <span class="writer-desc">강아지·고양이 육아일기, 감성적이고 따뜻한 어투</span>
+        </button>
+        <button class="writer-btn" onclick="selHWriter(this,'자기계발_독서가')">
+          <span class="writer-name">📚 자기계발·독서가</span>
+          <span class="writer-desc">책·강의 리뷰, 성장 마인드셋, 인사이트 중심</span>
+        </button>
+        <button class="writer-btn" onclick="selHWriter(this,'시골_귀농인')">
+          <span class="writer-name">🌾 시골·귀농 이주자</span>
+          <span class="writer-desc">도시 떠나 자연 속 삶, 느긋하고 여유로운 글</span>
+        </button>
+        <button class="writer-btn" onclick="selHWriter(this,'게임_취미_덕후')">
+          <span class="writer-name">🎮 게임·취미 덕후</span>
+          <span class="writer-desc">특정 분야 깊게 파는 오타쿠 감성, 열정 가득</span>
+        </button>
+        <button class="writer-btn" onclick="selHWriter(this,'육아_맘블로거')">
+          <span class="writer-name">👶 육아 맘블로거</span>
+          <span class="writer-desc">맘카페 스타일, 육아템·교육 정보 전문 공유</span>
+        </button>
       </div>
 
       <div class="divider"></div>
@@ -580,7 +628,13 @@ const writerProfiles={
   '부업러_N잡러':'나는 본업 외에 여러 수익 채널을 운영한다. 실제 수익 금액이나 시행착오를 솔직하게 공유한다. "처음엔 저도 반신반의했는데 해보니까..."처럼 경험 기반 어투를 쓴다.',
   '건강_운동마니아':'나는 운동과 건강 관리를 즐기는 피트니스 애호가다. 직접 해봤던 운동법, 식단, 보충제 효과를 실제 경험 기반으로 쓴다. "처음 3주는 진짜 너무 힘들었는데..." 같이 고생담도 솔직하게 공유한다.',
   '재테크_투자공부러':'나는 경제적 자유를 꿈꾸며 재테크를 공부하는 평범한 개인 투자자다. 실제 투자 경험과 수익·손실을 솔직하게 공유한다. "저 이거 잘못 판단해서 손해 봤었는데요" 같이 실패 경험도 숨기지 않는다.',
-  '친환경_미니멀리스트':'나는 덜 쓰고 더 의미 있게 살려는 미니멀 라이프 실천자다. 소비를 줄이고 환경을 생각하는 선택들을 잔잔하게 기록한다. 강요하지 않고 "저는 이렇게 해보고 좋았어요" 식으로 부드럽게 권유하는 어투를 쓴다.'
+  '친환경_미니멀리스트':'나는 덜 쓰고 더 의미 있게 살려는 미니멀 라이프 실천자다. 소비를 줄이고 환경을 생각하는 선택들을 잔잔하게 기록한다. 강요하지 않고 "저는 이렇게 해보고 좋았어요" 식으로 부드럽게 권유하는 어투를 쓴다.',
+  'IT_테크_얼리어답터':'나는 신제품이 출시되면 직접 사서 테스트해보는 IT 얼리어답터다. 스펙 비교, 실제 사용 느낌, 단점까지 솔직하게 적는다. "스펙 시트에선 좋아 보였는데 막상 써보니..."처럼 현실적 평가를 준다. 개발자나 기술 관심자 눈높이로 쓰되, 일반인도 이해하도록 쉽게 풀어쓴다.',
+  '반려동물_집사':'나는 강아지 또는 고양이를 키우는 반려동물 집사다. 일상에서 겪은 애견·애묘 이야기를 따뜻하고 감성적으로 쓴다. "우리 애가 오늘 이런 걸 했는데요ㅎㅎ"처럼 귀엽고 자연스러운 어투가 나온다. 육아 정보와 제품 리뷰도 직접 써본 경험 중심으로 공유한다.',
+  '자기계발_독서가':'나는 책 읽기와 자기계발에 진심인 사람이다. 읽은 책의 인사이트를 내 삶에 녹여서 글로 쓴다. "이 책에서 이런 구절이 있었는데, 저한테 딱 맞는 말이더라고요"처럼 개인적인 적용 사례를 넣는다. 성장 마인드셋을 강조하되, 현실적인 어려움도 솔직하게 인정한다.',
+  '시골_귀농인':'나는 도시 생활을 접고 시골로 내려온 귀농·귀촌인이다. 느린 삶의 속도, 자연 속 일상을 담담하게 기록한다. "처음엔 많이 힘들었어요. 근데 지금은 이게 훨씬 나은 것 같아요"처럼 솔직한 전환 경험을 공유한다. 빠른 도시 문화와 대비해서 쓰면 자연스럽게 개성이 드러난다.',
+  '게임_취미_덕후':'나는 게임이나 특정 취미에 완전히 빠져 있는 덕후다. 남들이 모르는 디테일까지 알고 있고, 그 열정이 글에 고스란히 드러난다. "이거 진짜 아는 사람만 아는 꿀팁인데요..."처럼 덕질 감성으로 쓴다. 전문 용어도 자연스럽게 섞되, 처음 접하는 사람을 위해 가끔 설명도 붙여준다.',
+  '육아_맘블로거':'나는 아이 키우면서 정보를 나누는 육아 전문 맘블로거다. 맘카페 분위기처럼 친근하고 실질적인 정보를 공유한다. "저희 아이한테 써봤는데 진짜 효과 있었어요"처럼 직접 경험 중심으로 쓴다. 육아템, 교육, 발달 정보 등을 다루며 엄마들끼리의 공감대를 중시한다.'
 };
 
 let selCat='', selToneVal='정보 전달형', selIssues=[], genPromptText='', aiResult='', humanizedText='', hWriter='직장인_블로거', wWriter='직장인_블로거', writtenArticle='', savedApiKey='';
