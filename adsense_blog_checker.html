@@ -141,6 +141,85 @@ select{font-family:inherit;font-size:13px}
 .blogger-btn{border-color:#f4511e;background:#fff3e0;color:#bf360c;font-weight:600}
 .blogger-btn:hover{background:#ffe0b2}
 .blogger-publish-banner{background:linear-gradient(135deg,#fce4ec,#fff3e0);border:1px solid #f4511e;border-radius:10px;padding:14px 16px;margin-top:12px;font-size:13px}
+
+/* ===== 하단 모바일 네비게이션 ===== */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1.5px solid #e0e0e0;z-index:999;box-shadow:0 -3px 14px rgba(0,0,0,.09);padding-bottom:env(safe-area-inset-bottom)}
+.mobile-nav-inner{display:flex}
+.mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;cursor:pointer;color:#999;font-size:10px;font-weight:500;transition:color .15s;-webkit-tap-highlight-color:transparent;border:none;background:none}
+.mnav-item.active{color:#1565c0}
+.mnav-item.active .mnav-icon{background:#e3f2fd;border-radius:50%;transform:scale(1.1)}
+.mnav-icon{font-size:22px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mnav-label{font-size:10px;line-height:1}
+
+/* ===== 모바일 반응형 ===== */
+@media (max-width:600px){
+  /* 앱 여백 — 하단 네비 높이 확보 */
+  .app{padding:12px 10px 76px}
+  h1{font-size:15px;line-height:1.4}
+  .subtitle{font-size:11px;margin-bottom:12px}
+  .badge{font-size:10px;padding:1px 6px}
+
+  /* 상단 탭 숨기고 하단 네비 표시 */
+  .tabs{display:none}
+  .mobile-nav{display:block}
+
+  /* 카드 */
+  .card{padding:12px 11px;border-radius:10px;margin-bottom:10px}
+  .card-title{font-size:12px}
+
+  /* 그리드 축소 */
+  .category-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .tone-grid{grid-template-columns:repeat(2,1fr);gap:5px}
+  .writer-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .policy-grid{grid-template-columns:1fr}
+  .anti-ai-grid{grid-template-columns:1fr}
+  .metric-grid{grid-template-columns:repeat(3,1fr);gap:5px}
+
+  /* 버튼 터치 크기 */
+  .generate-btn,.batch-btn,.check-btn,.write-btn{padding:14px;font-size:14px;border-radius:10px}
+  .cat-btn{padding:9px 3px}
+  .cat-icon{font-size:20px}
+  .tone-btn{padding:9px 4px}
+  .writer-btn{padding:9px 7px}
+
+  /* iOS 줌 방지: 16px 이상으로 고정 */
+  .check-textarea,.api-key-input,input,select,textarea{font-size:16px!important}
+  .check-textarea{min-height:140px}
+
+  /* API 키 입력 행 세로 정렬 */
+  .api-key-row{flex-direction:column;align-items:stretch}
+  .api-key-save{width:100%;padding:11px}
+
+  /* 점수 링 레이아웃 */
+  .score-wrap{flex-direction:column;align-items:flex-start;gap:10px}
+  .score-ring{width:72px;height:72px;font-size:18px}
+
+  /* 버튼 행 */
+  .btn-row{gap:6px}
+  .outline-btn{padding:9px 10px;font-size:12px}
+  .btn-pair{gap:6px}
+
+  /* 글 박스 */
+  .article-box{max-height:380px;font-size:13px;padding:12px}
+  .ai-box{max-height:380px}
+
+  /* 파이프라인 */
+  .pipeline-step{padding:10px 12px;gap:8px}
+  .step-icon{font-size:18px}
+  .step-title{font-size:12px}
+
+  /* 발행 이력 */
+  #publish-history-list div{font-size:11px}
+
+  /* 인라인 notice */
+  .anti-ai-notice,.humanize-tab-notice{font-size:11px;padding:8px 10px}
+}
+
+@media (max-width:380px){
+  .writer-grid{grid-template-columns:1fr}
+  .category-grid{gap:5px}
+  h1{font-size:14px}
+}
 </style>
 </head>
 <body>
@@ -656,6 +735,24 @@ select{font-family:inherit;font-size:13px}
   </div>
 </div>
 
+<!-- 하단 모바일 네비게이션 -->
+<nav class="mobile-nav" id="mobile-nav" aria-label="하단 네비게이션">
+  <div class="mobile-nav-inner">
+    <button class="mnav-item active" id="mnav-write" onclick="switchTab('write')">
+      <span class="mnav-icon">✏️</span>
+      <span class="mnav-label">글 작성</span>
+    </button>
+    <button class="mnav-item" id="mnav-humanize" onclick="switchTab('humanize')">
+      <span class="mnav-icon">🧑</span>
+      <span class="mnav-label">AI티 제거</span>
+    </button>
+    <button class="mnav-item" id="mnav-check" onclick="switchTab('check')">
+      <span class="mnav-icon">🛡️</span>
+      <span class="mnav-label">정책 점검</span>
+    </button>
+  </div>
+</nav>
+
 <script>
 /* ===== OAuth 팝업 리디렉트 감지 (팝업에서 실행될 때) ===== */
 (function detectOAuthRedirect(){
@@ -764,11 +861,18 @@ function getApiKey(){
 })();
 
 function switchTab(t){
+  // 상단 탭
   document.querySelectorAll('.tab').forEach((el,i)=>{
     el.classList.toggle('active',(i===0&&t==='write')||(i===1&&t==='humanize')||(i===2&&t==='check'))
   });
+  // 탭 패널
   document.querySelectorAll('.tab-panel').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('tab-'+t)?.classList.add('active');
+  // 하단 모바일 네비 동기화
+  document.querySelectorAll('.mnav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('mnav-'+t)?.classList.add('active');
+  // 탭 전환 시 상단으로 스크롤
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 function goHumanize(){switchTab('humanize')}
 function goCheck(){switchTab('check')}
