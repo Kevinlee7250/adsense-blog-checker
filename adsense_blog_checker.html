@@ -330,19 +330,21 @@ select{font-family:inherit;font-size:13px}
 
     <!-- Google OAuth / Blogger 설정 -->
     <div class="card" id="blogger-key-card">
-      <div class="card-title">🟠 Blogger 발행 설정 <span style="font-size:11px;font-weight:400;color:#888">(작성 완료 글 Blogger 자동 발행)</span></div>
+      <div class="card-title">🟠 Blogger 발행 설정 <span style="font-size:11px;font-weight:400;color:#888">(작성 완료 글 Blogger 1클릭 자동 발행)</span></div>
       <div id="gcid-saved-notice" style="display:none;background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:10px 12px;font-size:12px;color:#e65100;margin-bottom:8px">
-        ✅ Google Client ID 저장됨 — <span id="gcid-masked"></span>
+        ✅ Google OAuth Client ID 저장됨 — <span id="gcid-masked"></span>
         <button onclick="clearGoogleClientId()" style="margin-left:10px;padding:2px 10px;border:1px solid #e53935;background:#ffebee;color:#e53935;border-radius:6px;font-size:11px;cursor:pointer">🗑️ 삭제</button>
       </div>
       <div id="gcid-input-row" class="api-key-row">
-        <input class="api-key-input" type="text" id="gcid-input" placeholder="123456789-xxx.apps.googleusercontent.com" autocomplete="off"/>
+        <input class="api-key-input" type="text" id="gcid-input" placeholder="310114393483-xxx.apps.googleusercontent.com" autocomplete="off"/>
         <button class="api-key-save" style="background:#f4511e" onclick="saveGoogleClientId()">💾 저장</button>
       </div>
       <div style="font-size:11px;color:#888;margin-top:4px;line-height:1.7">
-        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#f4511e">Google Cloud Console</a> → OAuth 2.0 클라이언트 ID 생성 (웹 애플리케이션)<br>
-        승인된 JavaScript 출처: <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:10px">https://kevinlee7250.github.io</code><br>
-        승인된 리디렉션 URI: <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:10px">https://kevinlee7250.github.io/adsense-blog-checker/adsense_blog_checker.html</code>
+        <strong style="color:#bf360c">📋 Client ID 입력 후 저장</strong> → 버튼 클릭 시 Google 로그인 팝업 → 승인 → 자동 발행!<br>
+        ⚙️ <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#f4511e">Google Cloud Console</a> → 클라이언트 수정 → 승인된 JavaScript 원본 추가:<br>
+        <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:10px">https://kevinlee7250.github.io</code><br>
+        승인된 리디렉션 URI 추가:<br>
+        <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:10px">https://kevinlee7250.github.io/adsense-blog-checker/adsense_blog_checker.html</code>
       </div>
       <div id="gcid-status" style="font-size:12px;margin-top:6px;display:none"></div>
     </div>
@@ -1596,17 +1598,17 @@ let _bloggerSource='write'; // 'write' | 'pipeline'
 function saveGoogleClientId(){
   const v=document.getElementById('gcid-input').value.trim();
   if(!v||!v.includes('apps.googleusercontent.com')){
-    showGcidStatus('❌ 올바른 Google Client ID 형식이 아닙니다','#d32f2f');return;
+    showGcidStatus('❌ 올바른 OAuth Client ID 형식이 아닙니다 (xxx.apps.googleusercontent.com)','#d32f2f');return;
   }
   googleClientId=v;
   try{localStorage.setItem(LS_GCID,v);}catch(e){}
   document.getElementById('gcid-input').value='';
   updateGcidUI(v);
-  showGcidStatus('✅ Google Client ID가 저장되었습니다!','#2e7d32');
+  showGcidStatus('✅ Google OAuth Client ID가 저장되었습니다!','#2e7d32');
 }
 
 function clearGoogleClientId(){
-  if(!confirm('저장된 Google Client ID를 삭제하시겠습니까?'))return;
+  if(!confirm('저장된 Google OAuth Client ID를 삭제하시겠습니까?'))return;
   googleClientId=''; googleAccessToken='';
   try{localStorage.removeItem(LS_GCID);}catch(e){}
   updateGcidUI(null);
@@ -1633,7 +1635,7 @@ function showGcidStatus(msg,color){
 function publishToBlogger(source){
   _bloggerSource=source||'write';
   if(!googleClientId){
-    alert('먼저 Google OAuth Client ID를 입력하고 저장해주세요.\n(화면 상단 🟠 Blogger 발행 설정 참고)');
+    alert('먼저 Google OAuth Client ID를 입력하고 저장해주세요.\n(화면 상단 🟠 Blogger 발행 설정 카드 참고)');
     document.getElementById('gcid-input').focus();
     return;
   }
