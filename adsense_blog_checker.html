@@ -142,6 +142,53 @@ select{font-family:inherit;font-size:13px}
 .blogger-btn:hover{background:#ffe0b2}
 .blogger-publish-banner{background:linear-gradient(135deg,#fce4ec,#fff3e0);border:1px solid #f4511e;border-radius:10px;padding:14px 16px;margin-top:12px;font-size:13px}
 
+/* ===== 대시보드 ===== */
+.dash-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.kpi-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:14px 12px;text-align:center;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.kpi-card.kc-blue::before{background:linear-gradient(90deg,#1565c0,#42a5f5)}
+.kpi-card.kc-green::before{background:linear-gradient(90deg,#2e7d32,#66bb6a)}
+.kpi-card.kc-orange::before{background:linear-gradient(90deg,#e65100,#ffa726)}
+.kpi-num{font-size:28px;font-weight:700;line-height:1.1;margin-bottom:3px}
+.kpi-card.kc-blue .kpi-num{color:#1565c0}
+.kpi-card.kc-green .kpi-num{color:#2e7d32}
+.kpi-card.kc-orange .kpi-num{color:#e65100}
+.kpi-label{font-size:11px;color:#888;font-weight:500}
+.kpi-sub{font-size:10px;color:#aaa;margin-top:2px}
+.dash-status{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.status-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid #e0e0e0;border-radius:10px;font-size:12px}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.status-dot.ok{background:#43a047}
+.status-dot.ng{background:#e53935}
+.status-dot.warn{background:#fb8c00}
+.status-name{font-weight:600;color:#333;flex:1}
+.status-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600}
+.status-badge.ok{background:#e8f5e9;color:#2e7d32}
+.status-badge.ng{background:#ffebee;color:#c62828}
+.status-badge.warn{background:#fff3e0;color:#e65100}
+.dash-recent{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:14px;margin-bottom:14px}
+.dash-recent-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dash-recent-title{font-size:13px;font-weight:700;color:#333}
+.dash-recent-more{font-size:11px;color:#1565c0;cursor:pointer;text-decoration:none}
+.dash-recent-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:12px}
+.dash-recent-item:last-child{border-bottom:none}
+.dash-recent-num{width:18px;height:18px;border-radius:50%;background:#e3f2fd;color:#1565c0;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dash-recent-title-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333;font-weight:500}
+.dash-recent-date{color:#bbb;font-size:10px;white-space:nowrap}
+.dash-quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.quick-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 8px;background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;cursor:pointer;font-size:12px;color:#444;font-weight:600;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.quick-btn:hover{border-color:#1565c0;background:#f0f7ff;color:#1565c0}
+.quick-btn:active{transform:scale(.97)}
+.quick-icon{font-size:24px}
+.dash-empty{text-align:center;color:#bbb;font-size:12px;padding:20px 0}
+@media(max-width:600px){
+  .dash-kpi{grid-template-columns:repeat(3,1fr);gap:6px}
+  .kpi-num{font-size:22px}
+  .kpi-label{font-size:10px}
+  .dash-status{grid-template-columns:1fr}
+  .dash-quick{grid-template-columns:1fr 1fr}
+  .quick-btn{padding:12px 6px}
+}
 /* ===== 하단 모바일 네비게이션 ===== */
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1.5px solid #e0e0e0;z-index:999;box-shadow:0 -3px 14px rgba(0,0,0,.09);padding-bottom:env(safe-area-inset-bottom)}
 .mobile-nav-inner{display:flex}
@@ -228,10 +275,98 @@ select{font-family:inherit;font-size:13px}
   <div class="subtitle">프롬프트 생성 → 글 작성 → AI티 제거 → 애드센스 정책 점검까지 한 번에</div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('write')">✏️ 글 작성 프롬프트</div>
+    <div class="tab" onclick="switchTab('dash')">📊 대시보드</div>
+    <div class="tab active" onclick="switchTab('write')">✏️ 글 작성</div>
     <div class="tab" onclick="switchTab('humanize')">🧑 AI티 제거</div>
-    <div class="tab" onclick="switchTab('check')">🛡️ 애드센스 정책 점검</div>
+    <div class="tab" onclick="switchTab('check')">🛡️ 정책 점검</div>
   </div>
+
+  <!-- 탭0: 대시보드 -->
+  <div class="tab-panel" id="tab-dash">
+
+    <!-- KPI 카드 -->
+    <div class="dash-kpi">
+      <div class="kpi-card kc-blue">
+        <div class="kpi-num" id="kpi-total">0</div>
+        <div class="kpi-label">총 발행 글</div>
+        <div class="kpi-sub">누적</div>
+      </div>
+      <div class="kpi-card kc-green">
+        <div class="kpi-num" id="kpi-month">0</div>
+        <div class="kpi-label">이번 달</div>
+        <div class="kpi-sub" id="kpi-month-label">발행</div>
+      </div>
+      <div class="kpi-card kc-orange">
+        <div class="kpi-num" id="kpi-today">0</div>
+        <div class="kpi-label">오늘</div>
+        <div class="kpi-sub">발행</div>
+      </div>
+    </div>
+
+    <!-- 시스템 상태 -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">🔧 시스템 상태</div>
+      <div class="dash-status">
+        <div class="status-item">
+          <span class="status-dot" id="sd-anthropic"></span>
+          <span class="status-name">Anthropic API</span>
+          <span class="status-badge" id="sb-anthropic">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot" id="sd-oauth"></span>
+          <span class="status-name">Google OAuth</span>
+          <span class="status-badge" id="sb-oauth">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot" id="sd-blogger"></span>
+          <span class="status-name">Blogger 인증</span>
+          <span class="status-badge" id="sb-blogger">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot" id="sd-nav"></span>
+          <span class="status-name">Naver API</span>
+          <span class="status-badge" id="sb-nav">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 빠른 작업 -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">⚡ 빠른 작업</div>
+      <div class="dash-quick">
+        <button class="quick-btn" onclick="switchTab('write')">
+          <span class="quick-icon">✏️</span>새 글 작성
+        </button>
+        <button class="quick-btn" onclick="switchTab('write');setTimeout(()=>document.getElementById('auto-pipeline-section')?.scrollIntoView({behavior:'smooth'}),300)">
+          <span class="quick-icon">🤖</span>자동 파이프라인
+        </button>
+        <button class="quick-btn" onclick="switchTab('humanize')">
+          <span class="quick-icon">🧑</span>AI티 제거
+        </button>
+        <button class="quick-btn" onclick="switchTab('check')">
+          <span class="quick-icon">🛡️</span>정책 점검
+        </button>
+      </div>
+    </div>
+
+    <!-- 최근 발행 이력 -->
+    <div class="dash-recent">
+      <div class="dash-recent-header">
+        <span class="dash-recent-title">📋 최근 발행 이력</span>
+        <span class="dash-recent-more" onclick="switchTab('write');setTimeout(()=>document.getElementById('publish-history-card')?.scrollIntoView({behavior:'smooth'}),300)">전체 보기 →</span>
+      </div>
+      <div id="dash-history-list">
+        <div class="dash-empty">발행 이력이 없습니다</div>
+      </div>
+    </div>
+
+    <!-- 발행 캘린더 (월별 히트맵) -->
+    <div class="card">
+      <div class="card-title">📆 월별 발행 현황</div>
+      <div id="dash-calendar" style="overflow-x:auto;padding-bottom:4px"></div>
+    </div>
+
+  </div><!-- /tab-dash -->
 
   <!-- 탭1: 글 작성 -->
   <div class="tab-panel active" id="tab-write">
@@ -738,6 +873,10 @@ select{font-family:inherit;font-size:13px}
 <!-- 하단 모바일 네비게이션 -->
 <nav class="mobile-nav" id="mobile-nav" aria-label="하단 네비게이션">
   <div class="mobile-nav-inner">
+    <button class="mnav-item" id="mnav-dash" onclick="switchTab('dash')">
+      <span class="mnav-icon">📊</span>
+      <span class="mnav-label">대시보드</span>
+    </button>
     <button class="mnav-item active" id="mnav-write" onclick="switchTab('write')">
       <span class="mnav-icon">✏️</span>
       <span class="mnav-label">글 작성</span>
@@ -861,9 +1000,10 @@ function getApiKey(){
 })();
 
 function switchTab(t){
-  // 상단 탭
+  // 상단 탭 (dash=0, write=1, humanize=2, check=3)
+  const tabOrder=['dash','write','humanize','check'];
   document.querySelectorAll('.tab').forEach((el,i)=>{
-    el.classList.toggle('active',(i===0&&t==='write')||(i===1&&t==='humanize')||(i===2&&t==='check'))
+    el.classList.toggle('active',tabOrder[i]===t);
   });
   // 탭 패널
   document.querySelectorAll('.tab-panel').forEach(el=>el.classList.remove('active'));
@@ -871,9 +1011,134 @@ function switchTab(t){
   // 하단 모바일 네비 동기화
   document.querySelectorAll('.mnav-item').forEach(el=>el.classList.remove('active'));
   document.getElementById('mnav-'+t)?.classList.add('active');
+  // 대시보드 탭 진입 시 데이터 갱신
+  if(t==='dash')renderDashboard();
   // 탭 전환 시 상단으로 스크롤
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+/* ========== 대시보드 렌더 ========== */
+function renderDashboard(){
+  const history=loadPublishHistory();
+  const now=new Date();
+  const ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const ymd=`${ym}-${String(now.getDate()).padStart(2,'0')}`;
+
+  // KPI
+  const monthCnt=history.filter(r=>r.publishedAt.startsWith(ym)).length;
+  const todayCnt=history.filter(r=>r.publishedAt.startsWith(ymd)).length;
+  document.getElementById('kpi-total').textContent=history.length;
+  document.getElementById('kpi-month').textContent=monthCnt;
+  document.getElementById('kpi-today').textContent=todayCnt;
+  document.getElementById('kpi-month-label').textContent=`${now.getMonth()+1}월`;
+
+  // 시스템 상태
+  function setStatus(dotId,badgeId,ok,label){
+    const dot=document.getElementById(dotId);
+    const badge=document.getElementById(badgeId);
+    if(!dot||!badge)return;
+    dot.className='status-dot '+(ok?'ok':'ng');
+    badge.className='status-badge '+(ok?'ok':'ng');
+    badge.textContent=label||(ok?'정상':'미설정');
+  }
+  setStatus('sd-anthropic','sb-anthropic',!!savedApiKey,'저장됨');
+  setStatus('sd-oauth','sb-oauth',!!googleClientId,'저장됨');
+  setStatus('sd-blogger','sb-blogger',!!googleAccessToken,'인증됨');
+  // Naver API 여부 확인
+  const naverKey=localStorage.getItem('naver_client_id')||localStorage.getItem('naverClientId')||'';
+  setStatus('sd-nav','sb-nav',!!naverKey,'저장됨');
+  if(!naverKey){
+    document.getElementById('sd-nav').className='status-dot warn';
+    document.getElementById('sb-nav').className='status-badge warn';
+    document.getElementById('sb-nav').textContent='선택사항';
+  }
+
+  // 최근 발행 이력 (최근 5건)
+  const listEl=document.getElementById('dash-history-list');
+  if(listEl){
+    if(!history.length){
+      listEl.innerHTML='<div class="dash-empty">아직 발행된 글이 없습니다</div>';
+    } else {
+      listEl.innerHTML=history.slice(0,5).map((r,i)=>{
+        const d=new Date(r.publishedAt);
+        const dateStr=`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        return `<div class="dash-recent-item">
+          <span class="dash-recent-num">${i+1}</span>
+          <a href="${r.url}" target="_blank" class="dash-recent-title-text" style="text-decoration:none;color:inherit">${r.title}</a>
+          <span class="dash-recent-date">${dateStr}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // 월별 히트맵 캘린더 (최근 12주)
+  renderDashCalendar(history);
+}
+
+function renderDashCalendar(history){
+  const el=document.getElementById('dash-calendar');
+  if(!el)return;
+  // 날짜별 카운트
+  const countMap={};
+  history.forEach(r=>{
+    const d=r.publishedAt.split('T')[0];
+    countMap[d]=(countMap[d]||0)+1;
+  });
+  const today=new Date();
+  // 12주(84일) 캘린더 생성
+  const days=84;
+  const startDate=new Date(today);
+  startDate.setDate(startDate.getDate()-days+1);
+  // 주 단위로 분리
+  const weeks=[];
+  let week=[];
+  // 시작 요일 맞추기 (일요일=0)
+  let cur=new Date(startDate);
+  for(let i=0;i<days;i++){
+    const ymd=`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`;
+    week.push({date:ymd,count:countMap[ymd]||0,dow:cur.getDay()});
+    if(cur.getDay()===6||i===days-1){weeks.push(week);week=[];}
+    cur.setDate(cur.getDate()+1);
+  }
+  const maxCount=Math.max(1,...Object.values(countMap));
+  const colors=['#eee','#c8e6c9','#81c784','#4caf50','#2e7d32'];
+  function getColor(c){
+    if(c===0)return colors[0];
+    const idx=Math.min(Math.ceil(c/maxCount*4),4);
+    return colors[idx];
+  }
+  let html=`<div style="display:flex;gap:3px;align-items:flex-start">`;
+  // 요일 레이블
+  html+=`<div style="display:flex;flex-direction:column;gap:3px;margin-top:0;padding-top:0">
+    ${['일','월','화','수','목','금','토'].map(d=>`<div style="font-size:9px;color:#bbb;height:12px;line-height:12px;width:14px;text-align:center">${d}</div>`).join('')}
+  </div>`;
+  weeks.forEach(wk=>{
+    html+=`<div style="display:flex;flex-direction:column;gap:3px">`;
+    // 시작 전 빈칸
+    const firstDow=wk[0].dow;
+    for(let p=0;p<firstDow;p++){
+      html+=`<div style="width:12px;height:12px;border-radius:2px;background:transparent"></div>`;
+    }
+    wk.forEach(day=>{
+      const label=day.count>0?`${day.date}: ${day.count}건`:'';
+      html+=`<div title="${label}" style="width:12px;height:12px;border-radius:2px;background:${getColor(day.count)};cursor:${day.count>0?'pointer':'default'}" onclick="${day.count>0?`alert('${day.date}: ${day.count}건 발행')`:''}" ></div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  // 범례
+  html+=`<div style="display:flex;align-items:center;gap:4px;margin-top:6px;font-size:10px;color:#aaa">
+    <span>적음</span>
+    ${colors.map(c=>`<div style="width:10px;height:10px;border-radius:2px;background:${c}"></div>`).join('')}
+    <span>많음</span>
+  </div>`;
+  el.innerHTML=html;
+}
+
+// 앱 로드 시 대시보드 초기화용 (탭 전환 없이 첫 로드는 write 탭이지만 미리 데이터 준비)
+document.addEventListener('DOMContentLoaded',()=>{
+  // 대시보드는 진입 시 renderDashboard() 호출하므로 별도 초기화 불필요
+});
 function goHumanize(){switchTab('humanize')}
 function goCheck(){switchTab('check')}
 
