@@ -1751,37 +1751,121 @@ function showBloggerSuccess(title,url){
 }
 
 function mdToHtml(md){
-  // 훅킹문구 HTML 박스는 그대로 유지
-  let html=md
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    // HTML 박스는 원복 (훅킹문구)
-    .replace(/&lt;div style=/g,'<div style=').replace(/&lt;\/div&gt;/g,'</div>').replace(/&gt;(?=\s*[^<])/g,(m,o,s)=>{
-      // 복잡하므로 raw div 직접 처리
-      return m;
-    });
+  /* ===== Blogger 발행용 디자인 강화 HTML 변환 ===== */
 
-  // 더 안전한 방식: div 태그 먼저 추출 후 나머지 변환
+  // 전역 스타일 (Blogger 본문 최상단에 삽입)
+  const globalStyle=`<style>
+  .bg-wrap{font-family:'Noto Sans KR',sans-serif;color:#333;line-height:1.9;max-width:780px;margin:0 auto}
+  .bg-wrap h2{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:14px 20px;border-radius:10px;font-size:1.25em;margin:32px 0 16px;letter-spacing:-.3px}
+  .bg-wrap h3{border-left:5px solid #667eea;padding:8px 14px;background:#f8f6ff;color:#4a3fa0;font-size:1.1em;margin:24px 0 12px;border-radius:0 8px 8px 0}
+  .bg-wrap h4{color:#764ba2;font-size:1em;margin:16px 0 8px;padding-left:10px;border-left:3px solid #b39ddb}
+  .bg-wrap p{margin:12px 0;font-size:1em}
+  .bg-wrap ul,.bg-wrap ol{margin:10px 0 10px 8px;padding-left:20px}
+  .bg-wrap li{margin:6px 0;font-size:.97em;line-height:1.8}
+  .bg-wrap li::marker{color:#667eea;font-weight:700}
+  .bg-wrap strong{color:#4a3fa0;font-weight:700}
+  .bg-wrap em{color:#764ba2;font-style:italic}
+  .bg-wrap hr{border:none;height:2px;background:linear-gradient(90deg,#667eea,#764ba2,#f093fb);margin:32px 0;border-radius:2px}
+  .bg-wrap blockquote{background:linear-gradient(135deg,#fff8f0,#fff0f8);border-left:4px solid #ff9800;padding:14px 18px;margin:16px 0;border-radius:0 10px 10px 0;font-style:italic;color:#555}
+  .bg-tip{background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:1px solid #81c784;border-radius:10px;padding:14px 18px;margin:16px 0;font-size:.93em;color:#2e7d32}
+  .bg-info{background:linear-gradient(135deg,#e3f2fd,#ede7f6);border:1px solid #90caf9;border-radius:10px;padding:14px 18px;margin:16px 0;font-size:.93em;color:#1565c0}
+  .bg-warn{background:linear-gradient(135deg,#fff3e0,#fce4ec);border:1px solid #ffb74d;border-radius:10px;padding:14px 18px;margin:16px 0;font-size:.93em;color:#e65100}
+  /* 컬러풀 테이블 */
+  .bg-wrap table{width:100%;border-collapse:collapse;margin:20px 0;border-radius:12px;overflow:hidden;box-shadow:0 4px 15px rgba(102,126,234,.15)}
+  .bg-wrap thead tr{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+  .bg-wrap thead th{padding:13px 16px;font-size:.95em;font-weight:700;letter-spacing:-.2px;text-align:left}
+  .bg-wrap tbody tr:nth-child(odd){background:#fafbff}
+  .bg-wrap tbody tr:nth-child(even){background:#f3f0ff}
+  .bg-wrap tbody tr:hover{background:#ede7f6;transition:background .2s}
+  .bg-wrap td{padding:11px 16px;font-size:.93em;border-bottom:1px solid #e8e4ff;color:#333}
+  .bg-wrap td:first-child{font-weight:600;color:#4a3fa0}
+  /* 여행 일정 카드 */
+  .day-card{background:#fff;border:1.5px solid #e8e4ff;border-radius:14px;padding:18px 20px;margin:16px 0;box-shadow:0 3px 12px rgba(102,126,234,.1)}
+  .day-card .day-label{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:inline-block;padding:4px 14px;border-radius:20px;font-size:.85em;font-weight:700;margin-bottom:10px}
+  </style>`;
+
+  // ① div 블록 (훅킹문구 등) 먼저 추출
   const divBlocks=[];
   md=md.replace(/(<div[\s\S]*?<\/div>)/g,(m)=>{divBlocks.push(m);return `\x00DIV${divBlocks.length-1}\x00`;});
 
-  html=md
+  // ② 마크다운 → HTML 변환
+  let html=md
+
+    // 표(table) 변환: | 헤더1 | 헤더2 | 형식
+    .replace(/((?:^\|.+\|\n?)+)/gm,(tableBlock)=>{
+      const rows=tableBlock.trim().split('\n').filter(r=>r.trim()&&!r.match(/^\|[-:| ]+\|$/));
+      if(rows.length<1)return tableBlock;
+      let thtml='<table><thead><tr>';
+      const headers=rows[0].split('|').filter((_,i,a)=>i>0&&i<a.length-1);
+      headers.forEach(h=>{thtml+=`<th>${h.trim()}</th>`;});
+      thtml+='</tr></thead><tbody>';
+      rows.slice(1).forEach(row=>{
+        thtml+='<tr>';
+        const cells=row.split('|').filter((_,i,a)=>i>0&&i<a.length-1);
+        cells.forEach(c=>{thtml+=`<td>${c.trim()}</td>`;});
+        thtml+='</tr>';
+      });
+      thtml+='</tbody></table>';
+      return thtml;
+    })
+
+    // 헤딩
     .replace(/^#### (.+)$/gm,'<h4>$1</h4>')
     .replace(/^### (.+)$/gm,'<h3>$1</h3>')
     .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'')  // H1은 제목으로 이미 분리됨
+
+    // 특수 박스: 💡 팁, ℹ️ 정보, ⚠️ 경고
+    .replace(/^💡 (.+)$/gm,'<div class="bg-tip">💡 $1</div>')
+    .replace(/^ℹ️ (.+)$/gm,'<div class="bg-info">ℹ️ $1</div>')
+    .replace(/^⚠️ (.+)$/gm,'<div class="bg-warn">⚠️ $1</div>')
+
+    // 인용문
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+
+    // 굵게, 기울임
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/^[-*] (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
-    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+
+    // HR
+    .replace(/^---+$/gm,'<hr>')
+
+    // 순서 있는 목록
+    .replace(/((?:^\d+\. .+\n?)+)/gm,(block)=>{
+      const items=block.trim().split('\n').filter(Boolean);
+      return '<ol>'+items.map(i=>`<li>${i.replace(/^\d+\. /,'')}</li>`).join('')+'</ol>';
+    })
+
+    // 순서 없는 목록
+    .replace(/((?:^[-*] .+\n?)+)/gm,(block)=>{
+      const items=block.trim().split('\n').filter(Boolean);
+      return '<ul>'+items.map(i=>`<li>${i.replace(/^[-*] /,'')}</li>`).join('')+'</ul>';
+    })
+
+    // 링크
+    .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" style="color:#667eea;font-weight:600;text-decoration:none" target="_blank">$1</a>')
+
+    // 코드
+    .replace(/`(.+?)`/g,'<code style="background:#f3f0ff;color:#764ba2;padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>')
+
+    // 빈 줄 → 단락
     .replace(/\n{2,}/g,'</p><p>')
     .replace(/\n/g,'<br>');
 
+  // ③ 단락 감싸기 (테이블/헤딩/리스트/div가 아닌 부분만)
   html='<p>'+html+'</p>';
 
-  // div 블록 원복
+  // 불필요한 빈 단락 제거
+  html=html
+    .replace(/<p><\/p>/g,'')
+    .replace(/<p>\s*(<h[2-4]|<ul|<ol|<table|<hr|<blockquote|<div)/g,'$1')
+    .replace(/(<\/h[2-4]>|<\/ul>|<\/ol>|<\/table>|<hr>|<\/blockquote>|<\/div>)\s*<\/p>/g,'$1');
+
+  // ④ div 블록 원복
   html=html.replace(/\x00DIV(\d+)\x00/g,(_,i)=>divBlocks[parseInt(i)]);
 
-  return html;
+  // ⑤ 전체를 디자인 래퍼 + 전역 스타일로 감싸기
+  return `${globalStyle}<div class="bg-wrap">${html}</div>`;
 }
 
 function autoSendAndCheck(){
