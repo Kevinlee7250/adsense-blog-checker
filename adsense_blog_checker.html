@@ -349,6 +349,17 @@ select{font-family:inherit;font-size:13px}
       <div id="gcid-status" style="font-size:12px;margin-top:6px;display:none"></div>
     </div>
 
+    <!-- 발행 이력 카드 -->
+    <div class="card" id="publish-history-card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>📋 Blogger 발행 이력</span>
+        <button onclick="clearAllPublishHistory()" style="font-size:11px;padding:3px 10px;border:1px solid #ffcdd2;background:#ffebee;color:#e53935;border-radius:6px;cursor:pointer;font-weight:500">🗑️ 전체 삭제</button>
+      </div>
+      <div id="publish-history-list" style="max-height:200px;overflow-y:auto">
+        <div style="font-size:12px;color:#aaa;text-align:center;padding:10px">발행 이력이 없습니다</div>
+      </div>
+    </div>
+
     <div class="btn-pair">
       <button class="generate-btn" id="gen-btn" onclick="genPrompt()">✨ 프롬프트 생성</button>
       <button class="batch-btn" id="batch-btn" onclick="runBatch()">🚀 한 번에 모두 처리</button>
@@ -1672,6 +1683,69 @@ window.receiveGoogleToken=function(token){
   doPublishToBlogger();
 };
 
+/* ===== 발행 이력 관리 ===== */
+const LS_PUB_HISTORY='blogger_publish_history';
+
+function loadPublishHistory(){
+  try{return JSON.parse(localStorage.getItem(LS_PUB_HISTORY)||'[]');}catch(e){return [];}
+}
+
+function savePublishRecord(title,url,postId){
+  const history=loadPublishHistory();
+  history.unshift({title,url,postId,publishedAt:new Date().toISOString()});
+  // 최대 100건 유지
+  if(history.length>100)history.splice(100);
+  try{localStorage.setItem(LS_PUB_HISTORY,JSON.stringify(history));}catch(e){}
+  renderPublishHistory();
+}
+
+function deletePublishRecord(postId){
+  let history=loadPublishHistory();
+  history=history.filter(r=>r.postId!==postId);
+  try{localStorage.setItem(LS_PUB_HISTORY,JSON.stringify(history));}catch(e){}
+  renderPublishHistory();
+}
+
+function clearAllPublishHistory(){
+  if(!confirm('발행 이력을 모두 삭제하시겠습니까?'))return;
+  try{localStorage.removeItem(LS_PUB_HISTORY);}catch(e){}
+  renderPublishHistory();
+}
+
+function renderPublishHistory(){
+  const el=document.getElementById('publish-history-list');
+  if(!el)return;
+  const history=loadPublishHistory();
+  if(!history.length){
+    el.innerHTML='<div style="font-size:12px;color:#aaa;text-align:center;padding:10px">발행 이력이 없습니다</div>';
+    return;
+  }
+  el.innerHTML=history.map((r,i)=>{
+    const d=new Date(r.publishedAt);
+    const dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0eeff;font-size:12px">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333">
+        <a href="${r.url}" target="_blank" style="color:#667eea;text-decoration:none;font-weight:600">${r.title}</a>
+      </span>
+      <span style="color:#aaa;white-space:nowrap;font-size:11px">${dateStr}</span>
+      <button onclick="deletePublishRecord('${r.postId}')" style="border:1px solid #ffcdd2;background:#ffebee;color:#e53935;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;flex-shrink:0">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+// 제목 중복 체크 (정규화 비교)
+function checkDuplicateTitle(title){
+  const norm=t=>t.replace(/\s+/g,' ').trim().toLowerCase();
+  return loadPublishHistory().find(r=>norm(r.title)===norm(title));
+}
+
+// 발행 이력 카드 초기화
+(function initPublishHistory(){
+  // DOM 준비 후 렌더
+  document.addEventListener('DOMContentLoaded',renderPublishHistory);
+  setTimeout(renderPublishHistory,800);
+})();
+
 async function doPublishToBlogger(){
   // 어떤 글을 발행할지 결정
   const article = _bloggerSource==='pipeline'
@@ -1682,18 +1756,34 @@ async function doPublishToBlogger(){
     showBloggerStatus('❌ 발행할 글이 없습니다. 먼저 글을 작성해주세요.','#d32f2f');return;
   }
 
+  // 제목 추출
+  let title='블로그 포스트'; let bodyMd=article;
+  const titleMatch=article.match(/^#\s+(.+)/m);
+  if(titleMatch){
+    title=titleMatch[1].trim();
+    bodyMd=article.replace(titleMatch[0],'').trim();
+  }
+
+  // ★ 중복 발행 체크
+  const dup=checkDuplicateTitle(title);
+  if(dup){
+    const dupDate=new Date(dup.publishedAt).toLocaleDateString('ko-KR');
+    const ok=confirm(
+      `⚠️ 이미 발행된 글입니다!\n\n` +
+      `제목: "${dup.title}"\n` +
+      `발행일: ${dupDate}\n\n` +
+      `그래도 다시 발행하시겠습니까?\n(확인 시 중복 포스팅됩니다)`
+    );
+    if(!ok){
+      showBloggerStatus(`⚠️ 중복 발행 취소됨 — <a href="${dup.url}" target="_blank" style="color:#e65100">기존 발행 글 보기 →</a>`,'#e65100');
+      return;
+    }
+  }
+
   showBloggerStatus('⟳ Blogger에 발행 중...','#e65100');
   setBloggerBtnState(true);
 
   try{
-    // 제목 추출 (첫 번째 # H1)
-    let title='블로그 포스트'; let bodyMd=article;
-    const titleMatch=article.match(/^#\s+(.+)/m);
-    if(titleMatch){
-      title=titleMatch[1].trim();
-      bodyMd=article.replace(titleMatch[0],'').trim();
-    }
-
     // 마크다운 → HTML 변환
     const content=mdToHtml(bodyMd);
 
@@ -1704,7 +1794,6 @@ async function doPublishToBlogger(){
     });
 
     if(resp.status===401){
-      // 토큰 만료 → 재인증
       googleAccessToken='';
       showBloggerStatus('⚠️ 인증이 만료되었습니다. 다시 로그인해주세요.','#e65100');
       setBloggerBtnState(false);
@@ -1718,7 +1807,12 @@ async function doPublishToBlogger(){
 
     const data=await resp.json();
     const postUrl=data.url||`https://draft.blogger.com/blog/posts/${BLOGGER_BLOG_ID}`;
+    const postId=data.id||Date.now().toString();
+
+    // ★ 발행 이력 저장
+    savePublishRecord(title, postUrl, postId);
     showBloggerSuccess(title, postUrl);
+
   }catch(e){
     showBloggerStatus(`❌ 발행 실패: ${e.message}`,'#d32f2f');
   }finally{
