@@ -137,6 +137,10 @@ select{font-family:inherit;font-size:13px}
 /* 자동 점검 결과 */
 .auto-check-wrap{margin-top:14px;border-top:2px solid #e8f5e9;padding-top:14px}
 .auto-check-header{font-size:13px;font-weight:700;color:#2e7d32;margin-bottom:10px}
+/* Blogger 발행 */
+.blogger-btn{border-color:#f4511e;background:#fff3e0;color:#bf360c;font-weight:600}
+.blogger-btn:hover{background:#ffe0b2}
+.blogger-publish-banner{background:linear-gradient(135deg,#fce4ec,#fff3e0);border:1px solid #f4511e;border-radius:10px;padding:14px 16px;margin-top:12px;font-size:13px}
 </style>
 </head>
 <body>
@@ -324,6 +328,25 @@ select{font-family:inherit;font-size:13px}
       <div id="api-key-status" style="font-size:12px;margin-top:6px;display:none"></div>
     </div>
 
+    <!-- Google OAuth / Blogger 설정 -->
+    <div class="card" id="blogger-key-card">
+      <div class="card-title">🟠 Blogger 발행 설정 <span style="font-size:11px;font-weight:400;color:#888">(작성 완료 글 Blogger 자동 발행)</span></div>
+      <div id="gcid-saved-notice" style="display:none;background:#fff3e0;border:1px solid #ffb74d;border-radius:8px;padding:10px 12px;font-size:12px;color:#e65100;margin-bottom:8px">
+        ✅ Google Client ID 저장됨 — <span id="gcid-masked"></span>
+        <button onclick="clearGoogleClientId()" style="margin-left:10px;padding:2px 10px;border:1px solid #e53935;background:#ffebee;color:#e53935;border-radius:6px;font-size:11px;cursor:pointer">🗑️ 삭제</button>
+      </div>
+      <div id="gcid-input-row" class="api-key-row">
+        <input class="api-key-input" type="text" id="gcid-input" placeholder="123456789-xxx.apps.googleusercontent.com" autocomplete="off"/>
+        <button class="api-key-save" style="background:#f4511e" onclick="saveGoogleClientId()">💾 저장</button>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:4px;line-height:1.7">
+        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#f4511e">Google Cloud Console</a> → OAuth 2.0 클라이언트 ID 생성 (웹 애플리케이션)<br>
+        승인된 JavaScript 출처: <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:10px">https://kevinlee7250.github.io</code><br>
+        승인된 리디렉션 URI: <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:10px">https://kevinlee7250.github.io/adsense-blog-checker/adsense_blog_checker.html</code>
+      </div>
+      <div id="gcid-status" style="font-size:12px;margin-top:6px;display:none"></div>
+    </div>
+
     <div class="btn-pair">
       <button class="generate-btn" id="gen-btn" onclick="genPrompt()">✨ 프롬프트 생성</button>
       <button class="batch-btn" id="batch-btn" onclick="runBatch()">🚀 한 번에 모두 처리</button>
@@ -353,7 +376,9 @@ select{font-family:inherit;font-size:13px}
             <button class="outline-btn" onclick="copyArticle()">📋 글 복사</button>
             <button class="outline-btn purple-btn" onclick="sendArticleToHumanize()">🧑 AI티 제거하기 →</button>
             <button class="outline-btn blue-btn" onclick="sendArticleToCheck()">🛡️ 정책 점검하기 →</button>
+            <button class="outline-btn blogger-btn" id="blogger-publish-btn" onclick="publishToBlogger('write')">🟠 승인 & Blogger 발행</button>
           </div>
+          <div id="blogger-write-result" style="display:none;margin-top:10px"></div>
         </div>
       </div>
     </div>
@@ -401,7 +426,9 @@ select{font-family:inherit;font-size:13px}
           <div class="btn-row hidden" id="ac-result-btns" style="margin-top:10px">
             <button class="outline-btn" onclick="copyAutoCheckAnalysis()">📋 분석 결과 복사</button>
             <button class="outline-btn blue-btn" onclick="sendPipelineToCheck()">🛡️ 정책 점검 탭에서 재점검 →</button>
+            <button class="outline-btn blogger-btn" onclick="publishToBlogger('pipeline')">🟠 승인 & Blogger 발행</button>
           </div>
+          <div id="blogger-pipeline-result" style="display:none;margin-top:10px"></div>
         </div>
       </div>
     </div>
@@ -617,6 +644,18 @@ select{font-family:inherit;font-size:13px}
 </div>
 
 <script>
+/* ===== OAuth 팝업 리디렉트 감지 (팝업에서 실행될 때) ===== */
+(function detectOAuthRedirect(){
+  try{
+    const hash=window.location.hash;
+    if(hash&&hash.includes('access_token')&&window.opener&&window.opener.receiveGoogleToken){
+      const params=new URLSearchParams(hash.substring(1));
+      const token=params.get('access_token');
+      if(token){window.opener.receiveGoogleToken(token);window.close();return;}
+    }
+  }catch(e){}
+})();
+
 const hotIssues={
   '경제/금융':['미국 연준 금리 동결','원달러 환율 급등','삼성전자 주가 반등','코스피 3000 돌파','부동산 PF 위기','비트코인 상승','금값 사상 최고','물가 상승률 둔화'],
   'IT/테크':['AI 에이전트 시대 개막','GPT-5 출시 소식','애플 WWDC 2026','삼성 갤럭시 폴드 신제품','양자컴퓨터 상용화','메타 AR 안경 공개','테슬라 로봇 업데이트','구글 제미나이 2.5'],
@@ -1537,6 +1576,210 @@ function sendRewriteToCheck(){
   // 점검 탭으로 이동 (탭4 = index 3)
   document.querySelectorAll('.tab')[3].click();
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ===== Blogger 발행 ===== */
+const BLOGGER_BLOG_ID='4782599180249292575';
+const LS_GCID='adsense_google_client_id';
+let googleClientId='';
+let googleAccessToken='';
+let _bloggerSource='write'; // 'write' | 'pipeline'
+
+// 초기화: localStorage에서 Client ID 복원
+(function initGoogleClientId(){
+  try{
+    const stored=localStorage.getItem(LS_GCID);
+    if(stored){googleClientId=stored;updateGcidUI(stored);}
+  }catch(e){}
+})();
+
+function saveGoogleClientId(){
+  const v=document.getElementById('gcid-input').value.trim();
+  if(!v||!v.includes('apps.googleusercontent.com')){
+    showGcidStatus('❌ 올바른 Google Client ID 형식이 아닙니다','#d32f2f');return;
+  }
+  googleClientId=v;
+  try{localStorage.setItem(LS_GCID,v);}catch(e){}
+  document.getElementById('gcid-input').value='';
+  updateGcidUI(v);
+  showGcidStatus('✅ Google Client ID가 저장되었습니다!','#2e7d32');
+}
+
+function clearGoogleClientId(){
+  if(!confirm('저장된 Google Client ID를 삭제하시겠습니까?'))return;
+  googleClientId=''; googleAccessToken='';
+  try{localStorage.removeItem(LS_GCID);}catch(e){}
+  updateGcidUI(null);
+  showGcidStatus('🗑️ 삭제되었습니다.','#e65100');
+}
+
+function updateGcidUI(id){
+  const notice=document.getElementById('gcid-saved-notice');
+  const row=document.getElementById('gcid-input-row');
+  if(id){
+    document.getElementById('gcid-masked').textContent=id.slice(0,16)+'···';
+    notice.style.display='block'; row.style.display='none';
+  }else{
+    notice.style.display='none'; row.style.display='flex';
+  }
+}
+
+function showGcidStatus(msg,color){
+  const el=document.getElementById('gcid-status');
+  el.style.display='block'; el.style.color=color; el.textContent=msg;
+  setTimeout(()=>{el.style.display='none'},4000);
+}
+
+function publishToBlogger(source){
+  _bloggerSource=source||'write';
+  if(!googleClientId){
+    alert('먼저 Google OAuth Client ID를 입력하고 저장해주세요.\n(화면 상단 🟠 Blogger 발행 설정 참고)');
+    document.getElementById('gcid-input').focus();
+    return;
+  }
+  // 이미 토큰 있으면 바로 발행
+  if(googleAccessToken){doPublishToBlogger();return;}
+  // 없으면 OAuth 팝업
+  initiateGoogleOAuth();
+}
+
+function initiateGoogleOAuth(){
+  const redirectUri=window.location.href.split('#')[0].split('?')[0];
+  const url=`https://accounts.google.com/o/oauth2/v2/auth`+
+    `?client_id=${encodeURIComponent(googleClientId)}`+
+    `&redirect_uri=${encodeURIComponent(redirectUri)}`+
+    `&response_type=token`+
+    `&scope=${encodeURIComponent('https://www.googleapis.com/auth/blogger')}`+
+    `&prompt=consent`;
+
+  showBloggerStatus('⟳ Google 로그인 팝업을 확인해주세요...','#e65100');
+  const popup=window.open(url,'google-oauth','width=520,height=640,left=200,top=100');
+
+  // 팝업이 token 전송 전 닫힐 경우 폴링으로 감지
+  const timer=setInterval(()=>{
+    if(!popup||popup.closed){
+      clearInterval(timer);
+      if(!googleAccessToken)showBloggerStatus('❌ 로그인이 취소되었습니다.','#d32f2f');
+    }
+  },800);
+}
+
+// 팝업에서 토큰 전달받는 콜백
+window.receiveGoogleToken=function(token){
+  googleAccessToken=token;
+  doPublishToBlogger();
+};
+
+async function doPublishToBlogger(){
+  // 어떤 글을 발행할지 결정
+  const article = _bloggerSource==='pipeline'
+    ? (pipelineHumanized||writtenArticle)
+    : writtenArticle;
+
+  if(!article||article.length<50){
+    showBloggerStatus('❌ 발행할 글이 없습니다. 먼저 글을 작성해주세요.','#d32f2f');return;
+  }
+
+  showBloggerStatus('⟳ Blogger에 발행 중...','#e65100');
+  setBloggerBtnState(true);
+
+  try{
+    // 제목 추출 (첫 번째 # H1)
+    let title='블로그 포스트'; let bodyMd=article;
+    const titleMatch=article.match(/^#\s+(.+)/m);
+    if(titleMatch){
+      title=titleMatch[1].trim();
+      bodyMd=article.replace(titleMatch[0],'').trim();
+    }
+
+    // 마크다운 → HTML 변환
+    const content=mdToHtml(bodyMd);
+
+    const resp=await fetch(`https://www.googleapis.com/blogger/v3/blogs/${BLOGGER_BLOG_ID}/posts/`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${googleAccessToken}`,'Content-Type':'application/json'},
+      body:JSON.stringify({kind:'blogger#post',title,content})
+    });
+
+    if(resp.status===401){
+      // 토큰 만료 → 재인증
+      googleAccessToken='';
+      showBloggerStatus('⚠️ 인증이 만료되었습니다. 다시 로그인해주세요.','#e65100');
+      setBloggerBtnState(false);
+      setTimeout(()=>initiateGoogleOAuth(),800);
+      return;
+    }
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      throw new Error(err.error?.message||`HTTP ${resp.status}`);
+    }
+
+    const data=await resp.json();
+    const postUrl=data.url||`https://draft.blogger.com/blog/posts/${BLOGGER_BLOG_ID}`;
+    showBloggerSuccess(title, postUrl);
+  }catch(e){
+    showBloggerStatus(`❌ 발행 실패: ${e.message}`,'#d32f2f');
+  }finally{
+    setBloggerBtnState(false);
+  }
+}
+
+function setBloggerBtnState(loading){
+  const btns=document.querySelectorAll('.blogger-btn');
+  btns.forEach(b=>{b.disabled=loading;b.textContent=loading?'⟳ 발행 중...':'🟠 승인 & Blogger 발행';});
+}
+
+function showBloggerStatus(msg,color){
+  ['blogger-write-result','blogger-pipeline-result'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.display='block';el.innerHTML=`<span style="font-size:12px;color:${color}">${msg}</span>`;}
+  });
+}
+
+function showBloggerSuccess(title,url){
+  const html=`<div class="blogger-publish-banner">
+    <div style="font-size:14px;font-weight:700;color:#bf360c;margin-bottom:6px">🎉 Blogger 발행 완료!</div>
+    <div style="font-size:13px;margin-bottom:4px">📝 제목: <strong>${title}</strong></div>
+    <div style="font-size:12px"><a href="${url}" target="_blank" style="color:#f4511e;font-weight:600">👉 발행된 글 바로 보기 →</a></div>
+  </div>`;
+  ['blogger-write-result','blogger-pipeline-result'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.display='block';el.innerHTML=html;}
+  });
+}
+
+function mdToHtml(md){
+  // 훅킹문구 HTML 박스는 그대로 유지
+  let html=md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // HTML 박스는 원복 (훅킹문구)
+    .replace(/&lt;div style=/g,'<div style=').replace(/&lt;\/div&gt;/g,'</div>').replace(/&gt;(?=\s*[^<])/g,(m,o,s)=>{
+      // 복잡하므로 raw div 직접 처리
+      return m;
+    });
+
+  // 더 안전한 방식: div 태그 먼저 추출 후 나머지 변환
+  const divBlocks=[];
+  md=md.replace(/(<div[\s\S]*?<\/div>)/g,(m)=>{divBlocks.push(m);return `\x00DIV${divBlocks.length-1}\x00`;});
+
+  html=md
+    .replace(/^#### (.+)$/gm,'<h4>$1</h4>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^[-*] (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>')
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    .replace(/\n{2,}/g,'</p><p>')
+    .replace(/\n/g,'<br>');
+
+  html='<p>'+html+'</p>';
+
+  // div 블록 원복
+  html=html.replace(/\x00DIV(\d+)\x00/g,(_,i)=>divBlocks[parseInt(i)]);
+
+  return html;
 }
 
 function autoSendAndCheck(){
