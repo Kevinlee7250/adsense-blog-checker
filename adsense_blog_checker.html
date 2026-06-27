@@ -2266,12 +2266,20 @@ async function doPublishToBlogger(){
     showBloggerStatus('❌ 발행할 글이 없습니다. 먼저 글을 작성해주세요.','#d32f2f');return;
   }
 
-  // 제목 추출
+  // 제목 추출 + SEO 메타 정보 섹션 제거 (H1 이전 내용 전체 배제)
   let title='블로그 포스트'; let bodyMd=article;
   const titleMatch=article.match(/^#\s+(.+)/m);
   if(titleMatch){
     title=titleMatch[1].trim();
-    bodyMd=article.replace(titleMatch[0],'').trim();
+    // H1 위치 이후 내용만 사용 → SEO 메타 정보 블록 자동 제거
+    const h1Idx=article.indexOf(titleMatch[0]);
+    bodyMd=article.substring(h1Idx+titleMatch[0].length).trim();
+  } else {
+    // H1 없는 경우: SEO 메타 섹션 패턴 직접 제거
+    bodyMd=article
+      .replace(/^##\s*SEO\s*메타\s*정보[\s\S]*?(?=^##|\n\n\n)/m,'')
+      .replace(/^\s*[-*]\s*\*\*(메타[\s\S]*?)\*\*[\s\S]*?\n(?=\n)/gm,'')
+      .trim();
   }
 
   // ★ 중복 발행 체크
