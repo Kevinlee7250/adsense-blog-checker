@@ -993,22 +993,27 @@ function updateNaverKeyUI(id){
   const saved=document.getElementById('naver-saved-notice');
   const rows=document.getElementById('naver-input-rows');
   const masked=document.getElementById('naver-id-masked');
+  const newsBtn=document.getElementById('naver-news-btn');
+  if(!saved||!rows)return; // DOM 미준비 방어
   if(id){
-    saved.style.display='block'; rows.style.display='none';
+    saved.style.display='block';
+    rows.style.display='none';
     if(masked)masked.textContent=id.substring(0,6)+'…'+id.slice(-4);
-    document.getElementById('naver-news-btn').style.display='inline-flex';
+    if(newsBtn&&selCat)newsBtn.style.display='inline-flex';
   } else {
-    saved.style.display='none'; rows.style.display='block';
-    document.getElementById('naver-news-btn').style.display='none';
+    saved.style.display='none';
+    rows.style.display='block';
+    if(newsBtn)newsBtn.style.display='none';
   }
 }
-(function initNaverKey(){
+// DOM 준비 후 초기화 (IIFE → DOMContentLoaded 이동)
+document.addEventListener('DOMContentLoaded',function initNaverKey(){
   try{
     const id=localStorage.getItem(LS_NAVER_ID)||'';
     const sec=localStorage.getItem(LS_NAVER_SEC)||'';
     if(id&&sec){naverClientId=id;naverClientSecret=sec;updateNaverKeyUI(id);}
   }catch(e){}
-})();
+});
 
 // 카테고리 → 네이버 검색 키워드 매핑
 const naverCatKeywords={
