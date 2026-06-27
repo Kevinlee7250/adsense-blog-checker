@@ -385,7 +385,13 @@ select{font-family:inherit;font-size:13px}
     </div>
 
     <div class="card">
-      <div class="card-title">🔥 최신 핫이슈 선택</div>
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+        <span>🔥 최신 핫이슈 선택</span>
+        <button id="naver-news-btn" onclick="fetchNaverNews()" style="display:none;padding:5px 12px;background:#03c75a;color:#fff;border:none;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s" title="네이버 뉴스에서 카테고리 관련 실시간 이슈를 가져옵니다">
+          🟢 네이버 실시간 뉴스
+        </button>
+      </div>
+      <div id="naver-news-status" style="display:none;font-size:11px;color:#03c75a;margin-bottom:6px"></div>
       <div class="hotissue-tags" id="hotissue-container"><span style="font-size:12px;color:#999">카테고리를 먼저 선택하세요</span></div>
       <div style="margin-top:10px">
         <input type="text" id="custom-issue" placeholder="직접 입력 (예: 삼성전자 반도체 신공장)" style="width:100%;padding:8px 10px;border:1px solid #e0e0e0;border-radius:8px;font-family:inherit;font-size:13px"/>
@@ -561,6 +567,28 @@ select{font-family:inherit;font-size:13px}
         <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:10px">https://kevinlee7250.github.io/adsense-blog-checker/adsense_blog_checker.html</code>
       </div>
       <div id="gcid-status" style="font-size:12px;margin-top:6px;display:none"></div>
+    </div>
+
+    <!-- 네이버 API 설정 -->
+    <div class="card" id="naver-key-card">
+      <div class="card-title">🟢 네이버 API 설정 <span style="font-size:11px;font-weight:400;color:#888">(핫이슈 실시간 뉴스 자동 수집)</span></div>
+      <div id="naver-saved-notice" style="display:none;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:10px 12px;font-size:12px;color:#2e7d32;margin-bottom:8px">
+        ✅ 네이버 API 키 저장됨 — Client ID: <span id="naver-id-masked"></span>
+        <button onclick="clearNaverKey()" style="margin-left:10px;padding:2px 10px;border:1px solid #e53935;background:#ffebee;color:#e53935;border-radius:6px;font-size:11px;cursor:pointer">🗑️ 삭제</button>
+      </div>
+      <div id="naver-input-rows">
+        <div class="api-key-row" style="margin-bottom:6px">
+          <input class="api-key-input" type="text" id="naver-id-input" placeholder="Client ID (예: wVop187idY7TN0OWBgLh)" autocomplete="off"/>
+        </div>
+        <div class="api-key-row">
+          <input class="api-key-input" type="password" id="naver-sec-input" placeholder="Client Secret (예: R1XpIaVJuN)" autocomplete="off"/>
+          <button class="api-key-save" style="background:#03c75a" onclick="saveNaverKey()">💾 저장</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:5px;line-height:1.6">
+        <a href="https://developers.naver.com/apps/#/list" target="_blank" style="color:#03c75a">네이버 개발자센터</a> → 애플리케이션 → Client ID / Secret 확인
+      </div>
+      <div id="naver-status" style="font-size:12px;margin-top:6px;display:none"></div>
     </div>
 
     <!-- 발행 이력 카드 -->
@@ -939,6 +967,112 @@ const writerProfiles={
 
 let selCat='', selToneVal='정보 전달형', selIssues=[], genPromptText='', aiResult='', humanizedText='', hWriter='직장인_블로거', wWriter='직장인_블로거', writtenArticle='', savedApiKey='';
 
+/* ===== 네이버 API ===== */
+const LS_NAVER_ID='naver_client_id';
+const LS_NAVER_SEC='naver_client_secret';
+let naverClientId='', naverClientSecret='';
+
+function saveNaverKey(){
+  const id=document.getElementById('naver-id-input').value.trim();
+  const sec=document.getElementById('naver-sec-input').value.trim();
+  if(!id||!sec){alert('Client ID와 Secret을 모두 입력하세요.');return;}
+  try{localStorage.setItem(LS_NAVER_ID,id);localStorage.setItem(LS_NAVER_SEC,sec);}catch(e){}
+  naverClientId=id; naverClientSecret=sec;
+  updateNaverKeyUI(id);
+  const s=document.getElementById('naver-status');
+  s.style.display='block'; s.style.color='#2e7d32'; s.textContent='✅ 네이버 API 키가 저장되었습니다!';
+  setTimeout(()=>{s.style.display='none';},2500);
+}
+function clearNaverKey(){
+  if(!confirm('네이버 API 키를 삭제하시겠습니까?'))return;
+  try{localStorage.removeItem(LS_NAVER_ID);localStorage.removeItem(LS_NAVER_SEC);}catch(e){}
+  naverClientId=''; naverClientSecret='';
+  updateNaverKeyUI('');
+}
+function updateNaverKeyUI(id){
+  const saved=document.getElementById('naver-saved-notice');
+  const rows=document.getElementById('naver-input-rows');
+  const masked=document.getElementById('naver-id-masked');
+  if(id){
+    saved.style.display='block'; rows.style.display='none';
+    if(masked)masked.textContent=id.substring(0,6)+'…'+id.slice(-4);
+    document.getElementById('naver-news-btn').style.display='inline-flex';
+  } else {
+    saved.style.display='none'; rows.style.display='block';
+    document.getElementById('naver-news-btn').style.display='none';
+  }
+}
+(function initNaverKey(){
+  try{
+    const id=localStorage.getItem(LS_NAVER_ID)||'';
+    const sec=localStorage.getItem(LS_NAVER_SEC)||'';
+    if(id&&sec){naverClientId=id;naverClientSecret=sec;updateNaverKeyUI(id);}
+  }catch(e){}
+})();
+
+// 카테고리 → 네이버 검색 키워드 매핑
+const naverCatKeywords={
+  '경제/금융':'경제 주식 금융 뉴스','IT/테크':'IT 기술 테크 뉴스',
+  '건강/의학':'건강 의학 뉴스','여행/라이프스타일':'여행 라이프 트렌드',
+  '음식/요리':'맛집 음식 요리','교육/육아':'교육 육아 뉴스',
+  '환경/사회':'환경 사회 이슈','사회/시사':'사회 시사 뉴스'
+};
+
+async function fetchNaverNews(){
+  if(!naverClientId||!naverClientSecret){
+    alert('네이버 API 키를 먼저 저장하세요.');return;
+  }
+  if(!selCat){alert('카테고리를 먼저 선택하세요.');return;}
+  const btn=document.getElementById('naver-news-btn');
+  const statusEl=document.getElementById('naver-news-status');
+  btn.textContent='⏳ 불러오는 중…'; btn.disabled=true;
+  statusEl.style.display='block'; statusEl.textContent='네이버 뉴스 검색 중…';
+  try{
+    const query=naverCatKeywords[selCat]||selCat;
+    // corsproxy.io를 통한 CORS 우회 (헤더 포워딩 지원)
+    const apiUrl=`https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(query)}&display=7&sort=date`;
+    const resp=await fetch(`https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`,{
+      headers:{
+        'X-Naver-Client-Id':naverClientId,
+        'X-Naver-Client-Secret':naverClientSecret
+      }
+    });
+    if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+    const data=await resp.json();
+    const items=data.items||[];
+    if(!items.length){statusEl.textContent='검색 결과가 없습니다.';return;}
+    // 제목 정제 (HTML 태그 제거)
+    const titles=items.map(it=>it.title.replace(/<[^>]+>/g,'').replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&#[0-9]+;/g,''));
+    // 핫이슈 영역에 네이버 뉴스 태그로 추가
+    const container=document.getElementById('hotissue-container');
+    // 기존 네이버 태그 제거
+    container.querySelectorAll('.htag-naver').forEach(t=>t.remove());
+    titles.forEach(title=>{
+      const short=title.length>28?title.substring(0,28)+'…':title;
+      const t=document.createElement('span');
+      t.className='htag htag-naver';
+      t.title=title;
+      t.style.cssText='background:#e8f5e9;border-color:#a5d6a7;color:#1b5e20;font-size:10px';
+      t.textContent='🟢 '+short;
+      t.onclick=()=>{
+        t.classList.toggle('selected');
+        const fullTitle=title;
+        if(t.classList.contains('selected')){
+          if(!selIssues.includes(fullTitle))selIssues.push(fullTitle);
+        }else{selIssues=selIssues.filter(i=>i!==fullTitle);}
+      };
+      container.appendChild(t);
+    });
+    statusEl.textContent=`✅ 네이버 뉴스 ${titles.length}건 추가됨 (${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})})`;
+    setTimeout(()=>{statusEl.style.display='none';},3000);
+  }catch(e){
+    statusEl.style.color='#e53935';
+    statusEl.textContent=`⚠️ 네이버 뉴스 불러오기 실패: ${e.message}`;
+  }finally{
+    btn.textContent='🟢 네이버 실시간 뉴스'; btn.disabled=false;
+  }
+}
+
 /* ===== API 키 관리 ===== */
 const LS_KEY='adsense_checker_api_key';
 
@@ -1045,9 +1179,8 @@ function renderDashboard(){
   setStatus('sd-oauth','sb-oauth',!!googleClientId,'저장됨');
   setStatus('sd-blogger','sb-blogger',!!googleAccessToken,'인증됨');
   // Naver API 여부 확인
-  const naverKey=localStorage.getItem('naver_client_id')||localStorage.getItem('naverClientId')||'';
-  setStatus('sd-nav','sb-nav',!!naverKey,'저장됨');
-  if(!naverKey){
+  setStatus('sd-nav','sb-nav',!!naverClientId,'저장됨');
+  if(!naverClientId){
     document.getElementById('sd-nav').className='status-dot warn';
     document.getElementById('sb-nav').className='status-badge warn';
     document.getElementById('sb-nav').textContent='선택사항';
@@ -1145,6 +1278,9 @@ function goCheck(){switchTab('check')}
 function selectCat(btn,cat){
   document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); selCat=cat; selIssues=[];
+  // 네이버 API 연동 시 버튼 표시
+  const nb=document.getElementById('naver-news-btn');
+  if(nb&&naverClientId)nb.style.display='inline-flex';
   const c=document.getElementById('hotissue-container'); c.innerHTML='';
   (hotIssues[cat]||[]).forEach(issue=>{
     const t=document.createElement('span'); t.className='htag'; t.textContent=issue;
